@@ -2,9 +2,8 @@
 #+begin_src sql
 
 SELECT *
-  FROM credit_card_complaints
- LIMIT 100;
-
+FROM credit_card_complaints
+LIMIT 100;
 #+end_src
 
 #+begin_src
@@ -27,8 +26,7 @@ SELECT *
 #+begin_src sql
 
 SELECT COUNT(*)
-  FROM credit_card_complaints;
-
+FROM credit_card_complaints;
 #+end_src
 
 #+begin_src
@@ -39,9 +37,8 @@ SELECT COUNT(*)
 #+begin_src sql
 
 SELECT COUNT(*)
-  FROM credit_card_complaints
- WHERE consumer_complaint_narrative IS NOT NULL;
-
+FROM credit_card_complaints
+WHERE consumer_complaint_narrative IS NOT NULL;
 #+end_src
 
 #+begin_src
@@ -52,9 +49,8 @@ SELECT COUNT(*)
 #+begin_src sql
 
 SELECT COUNT(*)
-  FROM credit_card_complaints
- WHERE consumer_complaint_narrative IS NULL;
-
+FROM credit_card_complaints
+WHERE consumer_complaint_narrative IS NULL;
 #+end_src
 
 #+begin_src

@@ -1,3 +1,4 @@
+import sqlparse
 import pandas as pd
 
 # psycopg2 lets us easily run commands against our db
@@ -19,7 +20,7 @@ engine = create_engine('postgresql:///kijima')
 def run_query(query, description):
     print('** ' + description)
     print('#+begin_src sql')
-    print(query)
+    print(sqlparse.format(query, reindent=True, keyword_case='upper'))
     print('#+end_src')
     print()
     print('#+begin_src')

@@ -4,9 +4,13 @@
 ローカルにデータを用意して、SQLを実行できるようにする。
 元データは同じなので、dataworld上のクエリコンソールから実行することも可能。
 
+実行SQLと実行結果をテキストで出力して、どちらもバージョン管理に入れることができる。
+
 ### 実行方法
 
 `python query.py`
+
+`make export` → 実行結果をファイルにエクスポートする。https://github.com/kijimaD/sqlpod/blob/master/test.org
 
 ### postgresの用意
 db名とuser名は接続スクリプトでベタ書きされているので固定する必要がある。
@@ -44,7 +48,7 @@ CSVの日付形式が`07/20/2000`みたいなので、エラーが出た。変�
 ### python環境の用意
 
 ```shell
-pip install pandas sqlalchemy psycopg2
+pip install pandas sqlalchemy psycopg2 sqlparse
 ```
 
 ### pandaエラー
