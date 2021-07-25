@@ -1,3 +1,5 @@
+* other
+* 基本
 ** 基本形
 #+begin_src sql
 

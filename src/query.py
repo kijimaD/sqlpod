@@ -1,5 +1,7 @@
 import utils
 
+print('* ' + '基本')
+
 query = '''
 SELECT *
 FROM credit_card_complaints
