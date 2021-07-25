@@ -21,5 +21,8 @@ def run_query(query, description):
     print('#+begin_src sql')
     print(query)
     print('#+end_src')
+    print()
+    print('#+begin_src')
     print(pd.read_sql_query(query,con=engine))
+    print('#+end_src')
     return pd.read_sql_query(query,con=engine)

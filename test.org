@@ -6,6 +6,8 @@ SELECT *
  LIMIT 100;
 
 #+end_src
+
+#+begin_src
    complaint_id date_received  ... timely_response consumer_disputed
 0        469026    2013-07-29  ...             Yes               Yes
 1        469131    2013-07-29  ...             Yes                No
@@ -20,6 +22,7 @@ SELECT *
 99       482668    2013-08-07  ...             Yes                No
 
 [100 rows x 18 columns]
+#+end_src
 ** COUNT
 #+begin_src sql
 
@@ -27,8 +30,11 @@ SELECT COUNT(*)
   FROM credit_card_complaints;
 
 #+end_src
+
+#+begin_src
    count
 0  87718
+#+end_src
 ** IS NOT NULL
 #+begin_src sql
 
@@ -37,8 +43,11 @@ SELECT COUNT(*)
  WHERE consumer_complaint_narrative IS NOT NULL;
 
 #+end_src
+
+#+begin_src
    count
 0  17433
+#+end_src
 ** IS NULL
 #+begin_src sql
 
@@ -47,5 +56,8 @@ SELECT COUNT(*)
  WHERE consumer_complaint_narrative IS NULL;
 
 #+end_src
+
+#+begin_src
    count
 0  70285
+#+end_src
