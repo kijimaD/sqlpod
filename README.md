@@ -10,7 +10,7 @@
 
 `python query.py`
 
-`make export` → 実行結果をファイルにエクスポートする。https://github.com/kijimaD/sqlpod/blob/master/test.org
+`make export` → 実行結果をファイルにエクスポートする。https://github.com/kijimaD/sqlpod/blob/master/docs/query.org
 
 ### postgresの用意
 db名とuser名は接続スクリプトでベタ書きされているので固定する必要がある。

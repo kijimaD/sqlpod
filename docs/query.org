@@ -51,6 +51,224 @@ WHERE zip_code = '91701'
 7      2234754  Credit card              Discover    91701
 8      2235915  Credit card              Discover    91701
 #+end_src
+** 申立の数が多い会社ランキング
+#+begin_src sql
+
+SELECT company,
+       state,
+       zip_code,
+       count(complaint_id) AS complaint_count
+FROM credit_card_complaints
+WHERE company = 'Citibank'
+  AND state IS NOT NULL
+GROUP BY company,
+         state,
+         zip_code
+ORDER BY 4 DESC
+LIMIT 10;
+#+end_src
+
+#+begin_src
+    company state zip_code  complaint_count
+0  Citibank    NY    100XX               80
+1  Citibank    TX    750XX               67
+2  Citibank    CA    945XX               58
+3  Citibank    NY    112XX               52
+4  Citibank    CA    900XX               50
+5  Citibank    GA    300XX               46
+6  Citibank    NJ    070XX               44
+7  Citibank    IL    606XX               44
+8  Citibank    FL    331XX               39
+9  Citibank    CA    926XX               38
+#+end_src
+** ↑さっきのクエリに対する加工。外側のGROUP BYにより州ごとで一つになった
+#+begin_src sql
+
+SELECT ppt.company,
+       ppt.state,
+       max(ppt.complaint_count) AS complaint_count
+FROM
+  (SELECT company,
+          state,
+          zip_code,
+          count(complaint_id) AS complaint_count
+   FROM credit_card_complaints
+   WHERE company = 'Citibank'
+     AND state IS NOT NULL
+   GROUP BY company,
+            state,
+            zip_code
+   ORDER BY 4 DESC) ppt
+GROUP BY ppt.company,
+         ppt.state
+ORDER BY 3 DESC
+LIMIT 10;
+#+end_src
+
+#+begin_src
+    company state  complaint_count
+0  Citibank    NY               80
+1  Citibank    TX               67
+2  Citibank    CA               58
+3  Citibank    GA               46
+4  Citibank    IL               44
+5  Citibank    NJ               44
+6  Citibank    FL               39
+7  Citibank    VA               32
+8  Citibank    MD               32
+9  Citibank    DC               31
+#+end_src
+** 複数のサブクエリ…最終的に最大の申し立て件数を取得する
+#+begin_src sql
+
+SELECT ens.company,
+       ens.state,
+       ens.zip_code,
+       ens.complaint_count
+FROM
+  (SELECT company,
+          state,
+          zip_code,
+          count(complaint_id) AS complaint_count
+   FROM credit_card_complaints
+   WHERE state IS NOT NULL
+   GROUP BY company,
+            state,
+            zip_code) ens
+INNER JOIN
+  (SELECT ppx.company,
+          max(ppx.complaint_count) AS complaint_count
+   FROM
+     (SELECT ppt.company,
+             ppt.state,
+             max(ppt.complaint_count) AS complaint_count
+      FROM
+        (SELECT company,
+                state,
+                zip_code,
+                count(complaint_id) AS complaint_count
+         FROM credit_card_complaints
+         WHERE company = 'Citibank'
+           AND state IS NOT NULL
+         GROUP BY company,
+                  state,
+                  zip_code
+         ORDER BY 4 DESC) ppt
+      GROUP BY ppt.company,
+               ppt.state
+      ORDER BY 3 DESC) ppx
+   GROUP BY ppx.company) apx ON apx.company = ens.company
+AND apx.complaint_count = ens.complaint_count
+ORDER BY 4 DESC;
+#+end_src
+
+#+begin_src
+    company state zip_code  complaint_count
+0  Citibank    NY    100XX               80
+#+end_src
+** ↑の件数一覧にしたバージョン…のはずだが中身が変わらない
+#+begin_src sql
+
+SELECT ens.company,
+       ens.state,
+       ens.zip_code,
+       ens.complaint_count
+FROM
+  (SELECT company,
+          state,
+          zip_code,
+          count(complaint_id) AS complaint_count
+   FROM credit_card_complaints
+   WHERE state IS NOT NULL
+   GROUP BY company,
+            state,
+            zip_code) ens
+INNER JOIN
+  (SELECT ppx.company,
+          max(ppx.complaint_count) AS complaint_count
+   FROM
+     (SELECT ppt.company,
+             ppt.state,
+             max(ppt.complaint_count) AS complaint_count
+      FROM
+        (SELECT company,
+                state,
+                zip_code,
+                count(complaint_id) AS complaint_count
+         FROM credit_card_complaints
+         WHERE company = 'Citibank'
+           AND state IS NOT NULL
+         GROUP BY company,
+                  state,
+                  zip_code
+         ORDER BY 4 DESC) ppt
+      GROUP BY ppt.company,
+               ppt.state
+      ORDER BY 3 DESC) ppx
+   GROUP BY ppx.company) apx ON apx.company = ens.company
+AND apx.complaint_count = ens.complaint_count
+ORDER BY 4 DESC;
+#+end_src
+
+#+begin_src
+    company state zip_code  complaint_count
+0  Citibank    NY    100XX               80
+#+end_src
+* キャスト
+** floatに型キャストする
+#+begin_src sql
+
+SELECT CAST(complaint_id AS float) AS complaint_id
+FROM bank_account_complaints
+LIMIT 10;
+#+end_src
+
+#+begin_src
+   complaint_id
+0      468889.0
+1      468879.0
+2      468949.0
+3      468981.0
+4      469185.0
+5      475273.0
+6      469309.0
+7      469414.0
+8      469446.0
+9      469447.0
+#+end_src
+** intに型キャストする
+#+begin_src sql
+
+SELECT CAST(complaint_id AS int) AS complaint_id,
+       date_received,
+       product,
+       sub_product,
+       issue,
+       company,
+       state,
+       zip_code,
+       submitted_via,
+       date_sent,
+       company_response_to_consumer,
+       timely_response,
+       consumer_disputed
+FROM bank_account_complaints
+WHERE state = 'CA'
+  AND consumer_disputed = 'No'
+  AND company = 'Wells Fargo & Company'
+LIMIT 5;
+#+end_src
+
+#+begin_src
+   complaint_id date_received  ... timely_response consumer_disputed
+0        468889    2013-07-29  ...             Yes                No
+1        469185    2013-07-29  ...             Yes                No
+2        469446    2013-07-29  ...             Yes                No
+3        471075    2013-07-31  ...             Yes                No
+4        463525    2013-07-22  ...             Yes                No
+
+[5 rows x 13 columns]
+#+end_src
 * 基本
 ** 全表示
 #+begin_src sql
