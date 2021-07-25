@@ -59,3 +59,12 @@ WHERE consumer_complaint_narrative IS NULL;
    count
 0  70285
 #+end_src
+* VIEW
+** viewを作成する(command)
+#+begin_src sql
+
+CREATE VIEW credit_card_w_complaints AS
+SELECT *
+FROM credit_card_complaints
+WHERE consumer_complaint_narrative IS NOT NULL;
+#+end_src
