@@ -1,6 +1,58 @@
-* other
+* サブクエリ
+** サブクエリ
+#+begin_src sql
+
+SELECT ccd.complaint_id,
+       ccd.product,
+       ccd.company,
+       ccd.zip_code
+FROM
+  (SELECT complaint_id,
+          product,
+          company,
+          zip_code
+   FROM credit_card_complaints
+   WHERE zip_code = '91701') ccd
+LIMIT 10;
+#+end_src
+
+#+begin_src
+  complaint_id      product               company zip_code
+0        24857  Credit card          Barclays PLC    91701
+1        33157  Credit card              Citibank    91701
+2        12245  Credit card       Bank of America    91701
+3         3151  Credit card          Barclays PLC    91701
+4       352534  Credit card              Citibank    91701
+5      1963836  Credit card  JPMorgan Chase & Co.    91701
+6      2178015  Credit card              Discover    91701
+7      2234754  Credit card              Discover    91701
+8      2235915  Credit card              Discover    91701
+#+end_src
+** サブクエリの中の方
+#+begin_src sql
+
+SELECT complaint_id,
+       product,
+       company,
+       zip_code
+FROM credit_card_complaints
+WHERE zip_code = '91701'
+#+end_src
+
+#+begin_src
+  complaint_id      product               company zip_code
+0        24857  Credit card          Barclays PLC    91701
+1        33157  Credit card              Citibank    91701
+2        12245  Credit card       Bank of America    91701
+3         3151  Credit card          Barclays PLC    91701
+4       352534  Credit card              Citibank    91701
+5      1963836  Credit card  JPMorgan Chase & Co.    91701
+6      2178015  Credit card              Discover    91701
+7      2234754  Credit card              Discover    91701
+8      2235915  Credit card              Discover    91701
+#+end_src
 * 基本
-** 基本形
+** 全表示
 #+begin_src sql
 
 SELECT *
@@ -35,7 +87,7 @@ FROM credit_card_complaints;
    count
 0  87718
 #+end_src
-** IS NOT NULL
+** where: IS NOT NULL
 #+begin_src sql
 
 SELECT COUNT(*)
@@ -47,7 +99,7 @@ WHERE consumer_complaint_narrative IS NOT NULL;
    count
 0  17433
 #+end_src
-** IS NULL
+** where: IS NULL
 #+begin_src sql
 
 SELECT COUNT(*)
@@ -59,12 +111,174 @@ WHERE consumer_complaint_narrative IS NULL;
    count
 0  70285
 #+end_src
-* VIEW
-** viewを作成する(command)
+* ビュー
+** credit_wを作成する(command)
 #+begin_src sql
 
 CREATE VIEW credit_card_w_complaints AS
 SELECT *
 FROM credit_card_complaints
 WHERE consumer_complaint_narrative IS NOT NULL;
+#+end_src
+** credit_woを作成する(command)
+#+begin_src sql
+
+CREATE VIEW credit_card_wo_complaints AS
+SELECT *
+FROM credit_card_complaints
+WHERE consumer_complaint_narrative IS NULL;
+#+end_src
+** bank_wを作成する(command)
+#+begin_src sql
+
+CREATE VIEW bank_account_w_complaints AS
+SELECT *
+FROM bank_account_complaints
+WHERE consumer_complaint_narrative IS NOT NULL;
+#+end_src
+** bank_woを作成する(command)
+#+begin_src sql
+
+CREATE VIEW bank_account_wo_complaints AS
+SELECT *
+FROM bank_account_complaints
+WHERE consumer_complaint_narrative IS NULL;
+#+end_src
+** viewから取得する
+#+begin_src sql
+
+SELECT *
+FROM credit_card_w_complaints
+LIMIT 5;
+#+end_src
+
+#+begin_src
+  complaint_id date_received  ... timely_response consumer_disputed
+0      1297939    2015-03-24  ...             Yes                No
+1      1296693    2015-03-23  ...             Yes               Yes
+2      1295056    2015-03-23  ...             Yes                No
+3      1296880    2015-03-23  ...             Yes                No
+4      1296890    2015-03-23  ...             Yes                No
+
+[5 rows x 18 columns]
+#+end_src
+** UNION(command)
+#+begin_src sql
+
+CREATE VIEW with_complaints AS
+SELECT *
+FROM credit_card_w_complaints
+UNION ALL
+SELECT *
+FROM bank_account_w_complaints;
+#+end_src
+** with_complaints表示
+#+begin_src sql
+
+SELECT *
+FROM with_complaints
+LIMIT 5;
+#+end_src
+
+#+begin_src
+  complaint_id date_received  ... timely_response consumer_disputed
+0      1297939    2015-03-24  ...             Yes                No
+1      1296693    2015-03-23  ...             Yes               Yes
+2      1295056    2015-03-23  ...             Yes                No
+3      1296880    2015-03-23  ...             Yes                No
+4      1296890    2015-03-23  ...             Yes                No
+
+[5 rows x 18 columns]
+#+end_src
+** UNION(command)
+#+begin_src sql
+
+CREATE VIEW without_complaints AS
+SELECT *
+FROM credit_card_wo_complaints
+UNION ALL
+SELECT *
+FROM bank_account_wo_complaints;
+#+end_src
+** without_complaints表示
+#+begin_src sql
+
+SELECT *
+FROM without_complaints
+LIMIT 5;
+#+end_src
+
+#+begin_src
+  complaint_id date_received  ... timely_response consumer_disputed
+0       469026    2013-07-29  ...             Yes               Yes
+1       469131    2013-07-29  ...             Yes                No
+2       479990    2013-07-29  ...             Yes                No
+3       475777    2013-07-29  ...             Yes                No
+4       469473    2013-07-29  ...             Yes               Yes
+
+[5 rows x 18 columns]
+#+end_src
+** credit_card_without_complaints
+#+begin_src sql
+
+SELECT count(*)
+FROM credit_card_wo_complaints;
+#+end_src
+
+#+begin_src
+   count
+0  70285
+#+end_src
+** 申し立てがない
+#+begin_src sql
+
+SELECT count(*)
+FROM without_complaints
+#+end_src
+
+#+begin_src
+    count
+0  141236
+#+end_src
+** クレジットカードの申立がないものを除外
+#+begin_src sql
+
+SELECT count(*)
+FROM
+  (SELECT *
+   FROM without_complaints
+   EXCEPT SELECT *
+   FROM credit_card_wo_complaints) ppg;
+#+end_src
+
+#+begin_src
+   count
+0  70951
+#+end_src
+** 合成したカラムを表示する
+#+begin_src sql
+
+SELECT complaint_id,
+       product,
+       company,
+       zip_code,
+       complaint_id || '-' || product || '-' || company || '-' || zip_code AS CONCAT
+FROM credit_card_complaints
+LIMIT 10
+#+end_src
+
+#+begin_src
+  complaint_id      product  ... zip_code                                          concat
+0       469026  Credit card  ...    45247               469026-Credit card-Citibank-45247
+1       469131  Credit card  ...    98548    469131-Credit card-Synchrony Financial-98548
+2       479990  Credit card  ...    78232                   479990-Credit card-Amex-78232
+3       475777  Credit card  ...    32226            475777-Credit card-Capital One-32226
+4       469473  Credit card  ...    53066               469473-Credit card-Citibank-53066
+5       470828  Credit card  ...    89108  470828-Credit card-Wells Fargo & Company-89108
+6       470852  Credit card  ...    78249               470852-Credit card-Citibank-78249
+7       479338  Credit card  ...    19809   479338-Credit card-JPMorgan Chase & Co.-19809
+8       480935  Credit card  ...    07018               480935-Credit card-Citibank-07018
+9       469738  Credit card  ...    95409  469738-Credit card-Wells Fargo & Company-95409
+
+[10 rows x 5 columns]
 #+end_src

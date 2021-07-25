@@ -7,7 +7,7 @@ SELECT *
 FROM credit_card_complaints
 LIMIT 100;
 '''
-utils.run_query(query, '基本形')
+utils.run_query(query, '全表示')
 
 query = '''
 SELECT COUNT(*)
@@ -20,11 +20,11 @@ SELECT COUNT(*)
 FROM credit_card_complaints
 WHERE consumer_complaint_narrative IS NOT NULL;
 '''
-utils.run_query(query, 'IS NOT NULL')
+utils.run_query(query, 'where: IS NOT NULL')
 
 query = '''
 SELECT COUNT(*)
 FROM credit_card_complaints
 WHERE consumer_complaint_narrative IS NULL;
 '''
-utils.run_query(query, 'IS NULL')
+utils.run_query(query, 'where: IS NULL')
