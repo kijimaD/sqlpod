@@ -16,8 +16,10 @@ def run_command(command):
 from sqlalchemy import create_engine
 engine = create_engine('postgresql:///kijima')
 
-def run_query(query):
-    print('──────────')
+def run_query(query, description):
+    print('** ' + description)
+    print('#+begin_src sql')
     print(query)
+    print('#+end_src')
     print(pd.read_sql_query(query,con=engine))
     return pd.read_sql_query(query,con=engine)
