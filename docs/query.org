@@ -214,6 +214,298 @@ ORDER BY 4 DESC;
     company state zip_code  complaint_count
 0  Citibank    NY    100XX               80
 #+end_src
+* 練習問題
+** 会社数でカウント
+#+begin_src sql
+
+SELECT company,
+       count(company) AS company_amt
+FROM credit_card_complaints
+GROUP BY company
+ORDER BY company_amt DESC
+#+end_src
+
+#+begin_src
+                              company  company_amt
+0                            Citibank        16561
+1                         Capital One        12740
+2                JPMorgan Chase & Co.        10203
+3                     Bank of America         8995
+4                 Synchrony Financial         8637
+..                                ...          ...
+416           Allied Data Corporation            1
+417                 Asta Funding, Inc            1
+418         Van Ru Credit Corporation            1
+419                Razor Capital, LLC            1
+420  Regional Acquisition Group, Inc.            1
+
+[421 rows x 2 columns]
+#+end_src
+** ↑に全レコードカウントカラムを追加した
+#+begin_src sql
+
+SELECT company,
+       count(company) AS company_amt,
+
+  (SELECT count(*)
+   FROM credit_card_complaints) AS total
+FROM credit_card_complaints
+GROUP BY company
+ORDER BY company_amt DESC
+#+end_src
+
+#+begin_src
+                              company  company_amt  total
+0                            Citibank        16561  87718
+1                         Capital One        12740  87718
+2                JPMorgan Chase & Co.        10203  87718
+3                     Bank of America         8995  87718
+4                 Synchrony Financial         8637  87718
+..                                ...          ...    ...
+416           Allied Data Corporation            1  87718
+417                 Asta Funding, Inc            1  87718
+418         Van Ru Credit Corporation            1  87718
+419                Razor Capital, LLC            1  87718
+420  Regional Acquisition Group, Inc.            1  87718
+
+[421 rows x 3 columns]
+#+end_src
+** ↑をfromをネストした(結果は同じ)
+#+begin_src sql
+
+SELECT *
+FROM
+  (SELECT company,
+          COUNT(company) AS company_amt,
+
+     (SELECT COUNT(*)
+      FROM credit_card_complaints) AS total
+   FROM credit_card_complaints
+   GROUP BY company
+   ORDER BY company_amt DESC) ppg
+#+end_src
+
+#+begin_src
+                              company  company_amt  total
+0                            Citibank        16561  87718
+1                         Capital One        12740  87718
+2                JPMorgan Chase & Co.        10203  87718
+3                     Bank of America         8995  87718
+4                 Synchrony Financial         8637  87718
+..                                ...          ...    ...
+416           Allied Data Corporation            1  87718
+417                 Asta Funding, Inc            1  87718
+418         Van Ru Credit Corporation            1  87718
+419                Razor Capital, LLC            1  87718
+420  Regional Acquisition Group, Inc.            1  87718
+
+[421 rows x 3 columns]
+#+end_src
+** ↑で作成したカラム同士の計算を行う(このクエリはdataworldではキャストがエラーになる)
+#+begin_src sql
+
+SELECT ppg.company,
+       ppg.company_amt,
+       ppg.total,
+       ((CAST(ppg.company_amt AS float) / CAST(ppg.total AS float)) * 100) AS percent
+FROM
+  (SELECT company,
+          COUNT(company) AS company_amt,
+
+     (SELECT COUNT(*)
+      FROM credit_card_complaints) AS total
+   FROM credit_card_complaints
+   GROUP BY company
+   ORDER BY company_amt DESC) ppg;
+#+end_src
+
+#+begin_src
+                              company  company_amt  total    percent
+0                            Citibank        16561  87718  18.879819
+1                         Capital One        12740  87718  14.523815
+2                JPMorgan Chase & Co.        10203  87718  11.631592
+3                     Bank of America         8995  87718  10.254452
+4                 Synchrony Financial         8637  87718   9.846326
+..                                ...          ...    ...        ...
+416           Allied Data Corporation            1  87718   0.001140
+417                 Asta Funding, Inc            1  87718   0.001140
+418         Van Ru Credit Corporation            1  87718   0.001140
+419                Razor Capital, LLC            1  87718   0.001140
+420  Regional Acquisition Group, Inc.            1  87718   0.001140
+
+[421 rows x 4 columns]
+#+end_src
+* 基本的操作
+** ASでカラムに別名をつける。dataworldではダブルクオートをつけても日本語を使えないよう
+#+begin_src sql
+
+SELECT issue AS mondai
+FROM credit_card_complaints
+LIMIT 100;
+#+end_src
+
+#+begin_src
+                                 mondai
+0                     Billing statement
+1                  APR or interest rate
+2                    Delinquent account
+3                      Billing disputes
+4         Credit line increase/decrease
+..                                  ...
+95  Unsolicited issuance of credit card
+96                       Payoff process
+97                     Billing disputes
+98                    Billing statement
+99                                Other
+
+[100 rows x 1 columns]
+#+end_src
+** DISTINCTを使ってcompanyの重複をなくす
+#+begin_src sql
+
+SELECT DISTINCT company
+FROM credit_card_complaints;
+#+end_src
+
+#+begin_src
+                              company
+0              Goldman Sachs Bank USA
+1     Automatic Data Processing, Inc.
+2          Citi Management Group, LLC
+3     Lyons, Doughty & Veldhuis, P.C.
+4           Weinman Acquisition Group
+..                                ...
+416     Federated Capital Corporation
+417                          Experian
+418                      Conn's, Inc.
+419                Razor Capital, LLC
+420  Regional Acquisition Group, Inc.
+
+[421 rows x 1 columns]
+#+end_src
+** DISTINCTしたレコードのほかのカラムを出す
+#+begin_src sql
+
+SELECT DISTINCT company,
+                state
+FROM credit_card_complaints;
+#+end_src
+
+#+begin_src
+                               company state
+0                         E*Trade Bank    MA
+1                          Capital One    TX
+2                        Commerce Bank    KS
+3     Continental Finance Company, LLC    GA
+4                         Barclays PLC    IN
+...                                ...   ...
+2569                     PNC Bank N.A.    VA
+2570      Platinum Holdings Group, LLC    PA
+2571               Ally Financial Inc.    MO
+2572              First Tennessee Bank    TX
+2573                   Associated Bank    AZ
+
+[2574 rows x 2 columns]
+#+end_src
+** WHEREで条件指定する
+#+begin_src sql
+
+SELECT issue
+FROM credit_card_complaints
+WHERE company = 'Citibank'
+LIMIT 100;
+#+end_src
+
+#+begin_src
+                                  issue
+0                     Billing statement
+1         Credit line increase/decrease
+2            Closing/Cancelling account
+3                        Payoff process
+4                      Billing disputes
+..                                  ...
+95                     Billing disputes
+96                     Billing disputes
+97                             Late fee
+98            Advertising and marketing
+99  Unsolicited issuance of credit card
+
+[100 rows x 1 columns]
+#+end_src
+** 値を2倍にしたカラムを作成
+#+begin_src sql
+
+SELECT complaint_id,
+       (CAST(complaint_id AS float) * 2) AS complaint_id_x2
+FROM credit_card_complaints
+LIMIT 100;
+#+end_src
+
+#+begin_src
+   complaint_id  complaint_id_x2
+0        469026         938052.0
+1        469131         938262.0
+2        479990         959980.0
+3        475777         951554.0
+4        469473         938946.0
+..          ...              ...
+95       466061         932122.0
+96       466091         932182.0
+97       464970         929940.0
+98       465004         930008.0
+99       482668         965336.0
+
+[100 rows x 2 columns]
+#+end_src
+** 計算機として使う...FROMは不要
+#+begin_src sql
+
+SELECT 100 * 3 AS keisan;
+#+end_src
+
+#+begin_src
+   keisan
+0     300
+#+end_src
+** 否定演算子 - 結果はNo results
+#+begin_src sql
+
+SELECT *
+FROM credit_card_complaints
+WHERE product <> 'Credit card'
+LIMIT 100;
+#+end_src
+
+#+begin_src
+Empty DataFrame
+Columns: [complaint_id, date_received, product, sub_product, issue, sub_issue, consumer_complaint_narrative, company_public_response, company, state, zip_code, tags, consumer_consent_provided, submitted_via, date_sent, company_response_to_consumer, timely_response, consumer_disputed]
+Index: []
+#+end_src
+** 数値で条件指定
+#+begin_src sql
+
+SELECT complaint_id
+FROM credit_card_complaints
+WHERE CAST(complaint_id AS float) >= 460000
+LIMIT 100;
+#+end_src
+
+#+begin_src
+   complaint_id
+0        469026
+1        469131
+2        479990
+3        475777
+4        469473
+..          ...
+95       466091
+96       464970
+97       465004
+98       482668
+99       465017
+
+[100 rows x 1 columns]
+#+end_src
 * キャスト
 ** floatに型キャストする
 #+begin_src sql
@@ -269,7 +561,7 @@ LIMIT 5;
 
 [5 rows x 13 columns]
 #+end_src
-* 基本
+* 使い方
 ** 全表示
 #+begin_src sql
 

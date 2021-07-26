@@ -1,6 +1,6 @@
 import utils
 
-print('* ' + '基本')
+print('* ' + '使い方')
 
 query = '''
 SELECT *
