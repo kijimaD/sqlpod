@@ -506,6 +506,155 @@ LIMIT 100;
 
 [100 rows x 1 columns]
 #+end_src
+** 計算結果で条件指定
+#+begin_src sql
+
+SELECT complaint_id
+FROM credit_card_complaints
+WHERE CAST(complaint_id AS FLOAT) + CAST(zip_code AS FLOAT) >= 460000
+LIMIT 100;
+#+end_src
+
+#+begin_src
+   complaint_id
+0        469026
+1        469131
+2        479990
+3        475777
+4        469473
+..          ...
+95       466061
+96       466091
+97       464970
+98       465004
+99       482668
+
+[100 rows x 1 columns]
+#+end_src
+** NULLに比較演算子は使えない。IS NULLを使う
+#+begin_src sql
+
+SELECT company,
+       tags
+FROM credit_card_complaints
+WHERE tags IS NULL
+LIMIT 100;
+#+end_src
+
+#+begin_src
+                 company  tags
+0               Citibank  None
+1    Synchrony Financial  None
+2                   Amex  None
+3               Citibank  None
+4   JPMorgan Chase & Co.  None
+..                   ...   ...
+95       Bank of America  None
+96              Citibank  None
+97              Citibank  None
+98           Capital One  None
+99           Capital One  None
+
+[100 rows x 2 columns]
+#+end_src
+** ↑の結果のnullに対して<>を使っても認識しないことを確認
+#+begin_src sql
+
+SELECT *
+FROM
+  (SELECT company,
+          tags
+   FROM credit_card_complaints
+   WHERE tags IS NULL
+   LIMIT 100) null_tag
+WHERE tags <> '280';
+#+end_src
+
+#+begin_src
+Empty DataFrame
+Columns: [company, tags]
+Index: []
+#+end_src
+** NULLでないときはIS NOT NULLを使う
+#+begin_src sql
+
+SELECT company,
+       tags
+FROM credit_card_complaints
+WHERE tags IS NOT NULL
+LIMIT 100;
+#+end_src
+
+#+begin_src
+                  company            tags
+0             Capital One   Servicemember
+1                Citibank  Older American
+2   Wells Fargo & Company   Servicemember
+3   Wells Fargo & Company  Older American
+4                    Amex  Older American
+..                    ...             ...
+95            Capital One  Older American
+96        Bank of America  Older American
+97        Bank of America  Older American
+98               Citibank  Older American
+99    Synchrony Financial  Older American
+
+[100 rows x 2 columns]
+#+end_src
+** NOTで条件反転
+#+begin_src sql
+
+SELECT product,
+       complaint_id
+FROM credit_card_complaints
+WHERE NOT CAST(complaint_id AS FLOAT) >= 400000
+LIMIT 100
+#+end_src
+
+#+begin_src
+        product complaint_id
+0   Credit card        16536
+1   Credit card        16547
+2   Credit card       120836
+3   Credit card        16728
+4   Credit card        28836
+..          ...          ...
+95  Credit card       396874
+96  Credit card       396915
+97  Credit card       396969
+98  Credit card       397398
+99  Credit card       397471
+
+[100 rows x 2 columns]
+#+end_src
+** ORでおかしくなる例。companyの条件が無視されている。ANDが優先されるためカッコが必要。
+#+begin_src sql
+
+SELECT company,
+       issue
+FROM credit_card_complaints
+WHERE company = 'Citibank'
+  AND issue = 'Late fee'
+  OR issue = 'Payoff process'
+LIMIT 100
+#+end_src
+
+#+begin_src
+                  company           issue
+0   Wells Fargo & Company  Payoff process
+1                Citibank  Payoff process
+2                Citibank  Payoff process
+3                Citibank  Payoff process
+4            U.S. Bancorp  Payoff process
+..                    ...             ...
+95               Citibank        Late fee
+96        Bank of America  Payoff process
+97               Citibank        Late fee
+98        Bank of America  Payoff process
+99               Discover  Payoff process
+
+[100 rows x 2 columns]
+#+end_src
 * キャスト
 ** floatに型キャストする
 #+begin_src sql

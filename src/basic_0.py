@@ -63,3 +63,66 @@ SELECT complaint_id
  LIMIT 100;
 '''
 utils.run_query(query, '数値で条件指定')
+
+query = '''
+SELECT complaint_id
+  FROM credit_card_complaints
+ WHERE CAST(complaint_id AS FLOAT) + CAST(zip_code AS FLOAT) >= 460000
+ LIMIT 100;
+'''
+utils.run_query(query, '計算結果で条件指定')
+
+query = '''
+SELECT company, tags
+  FROM credit_card_complaints
+ WHERE tags IS NULL
+ LIMIT 100;
+'''
+utils.run_query(query, 'NULLに比較演算子は使えない。IS NULLを使う')
+
+query = '''
+SELECT *
+  FROM
+(SELECT company, tags
+   FROM credit_card_complaints
+  WHERE tags IS NULL
+  LIMIT 100) null_tag
+ WHERE tags <> '280';
+'''
+utils.run_query(query, '↑の結果のnullに対して<>を使っても認識しないことを確認')
+
+query = '''
+SELECT company, tags
+  FROM credit_card_complaints
+ WHERE tags IS NOT NULL
+ LIMIT 100;
+'''
+utils.run_query(query, 'NULLでないときはIS NOT NULLを使う')
+
+query = '''
+SELECT product, complaint_id
+  FROM credit_card_complaints
+ WHERE NOT CAST(complaint_id AS FLOAT) >= 400000
+ LIMIT 100
+'''
+utils.run_query(query, 'NOTで条件反転')
+
+query = '''
+SELECT company, issue
+  FROM credit_card_complaints
+ WHERE company = 'Citibank'
+   AND issue = 'Late fee'
+    OR issue = 'Payoff process'
+ LIMIT 100
+'''
+utils.run_query(query, 'ORでおかしくなる例。companyの条件が無視されている。ANDが優先されるためカッコが必要。')
+
+query = '''
+SELECT company, issue
+  FROM credit_card_complaints
+ WHERE company = 'Citibank'
+    AND (issue = 'Late fee'
+        OR issue = 'Payoff process')
+ LIMIT 100
+'''
+utils.run_query(query, 'カッコをつけて正しい結果になった')
