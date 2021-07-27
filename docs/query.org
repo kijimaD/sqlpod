@@ -975,6 +975,261 @@ ORDER BY COUNT DESC
 31                              Cash advance     19
 32                        Convenience checks     16
 #+end_src
+** SELECTが先に実行されるので、別名をGROUP BYで使うことはできない。PostgreSQLでは実行可能。
+#+begin_src sql
+
+SELECT company AS c
+FROM credit_card_complaints
+GROUP BY c
+#+end_src
+
+#+begin_src
+                                    c
+0              Goldman Sachs Bank USA
+1     Automatic Data Processing, Inc.
+2          Citi Management Group, LLC
+3     Lyons, Doughty & Veldhuis, P.C.
+4           Weinman Acquisition Group
+..                                ...
+416     Federated Capital Corporation
+417                          Experian
+418                      Conn's, Inc.
+419                Razor Capital, LLC
+420  Regional Acquisition Group, Inc.
+
+[421 rows x 1 columns]
+#+end_src
+** ↓と同じ
+#+begin_src sql
+
+SELECT DISTINCT company
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+                              company
+0              Goldman Sachs Bank USA
+1     Automatic Data Processing, Inc.
+2          Citi Management Group, LLC
+3     Lyons, Doughty & Veldhuis, P.C.
+4           Weinman Acquisition Group
+..                                ...
+416     Federated Capital Corporation
+417                          Experian
+418                      Conn's, Inc.
+419                Razor Capital, LLC
+420  Regional Acquisition Group, Inc.
+
+[421 rows x 1 columns]
+#+end_src
+** ↑と同じ
+#+begin_src sql
+
+SELECT company
+FROM credit_card_complaints
+GROUP BY company
+#+end_src
+
+#+begin_src
+                              company
+0              Goldman Sachs Bank USA
+1     Automatic Data Processing, Inc.
+2          Citi Management Group, LLC
+3     Lyons, Doughty & Veldhuis, P.C.
+4           Weinman Acquisition Group
+..                                ...
+416     Federated Capital Corporation
+417                          Experian
+418                      Conn's, Inc.
+419                Razor Capital, LLC
+420  Regional Acquisition Group, Inc.
+
+[421 rows x 1 columns]
+#+end_src
+** 集約したグループから含まれる行数が2行のものを選択する。集約に対して条件を指定するのがHAVING
+#+begin_src sql
+
+SELECT company,
+       COUNT(*)
+FROM credit_card_complaints
+GROUP BY company
+HAVING COUNT(*) = 2;
+#+end_src
+
+#+begin_src
+                                              company  count
+0                     Legal Recovery Law Offices, Inc      2
+1                                           Convergys      2
+2                                    Aqua Finance Inc      2
+3                        Duvera Billing Services, LLC      2
+4                     Western Alliance Bancorporation      2
+5                        Walter Lee & Associates, LLC      2
+6                       Asset Recovery Solutions, LLC      2
+7                          Prosperity Bancshares, Inc      2
+8                     Monarch Recovery Holdings, Inc.      2
+9                      Alliant Capital Management LLC      2
+10                           Love, Beal & Nixon, P.C.      2
+11                        Umpqua Holdings Corporation      2
+12                               Forster & Garbus LLP      2
+13                           Avant Credit Corporation      2
+14                              Credit Bureau of Napa      2
+15                        National Check Bureau, Inc.      2
+16                               P&L Acquisitions LLC      2
+17                               Zwicker & Associates      2
+18  Fidelity National Information Services, Inc. (...      2
+19                     Oliphant Financial Corporation      2
+20                                 CAC Financial Corp      2
+21                           Lending Club Corporation      2
+22                          Nationwide Acceptance LLC      2
+23                                          LoanDepot      2
+24                   Halsted Financial Services, LLC.      2
+25                                        Google Inc.      2
+26                        NCC Business Services, Inc.      2
+27                                   Eltman Law, P.C.      2
+28                       Platinum Holdings Group, LLC      2
+29                             Allgate Financial, LLC      2
+30                                   Hunt & Henriques      2
+31                 Scott Fetzer Financial Group, Inc.      2
+32                               One Technologies, LP      2
+33              Daniels Norelli Scully & Cecere, P.C.      2
+34                                          MoneyGram      2
+35                                     East West Bank      2
+36                  Mercantile Adjustment Bureau, LLC      2
+37                    Legal Prevention Services, LLC.      2
+38               New Century Financial Services, Inc.      2
+39                                           EverBank      2
+40                             Messerli & Kramer P.A.      2
+41                        Crown Asset Management, LLC      2
+42                        Kirschenbaum & Phillips P.C      2
+43                                  US Gold Cards Inc      2
+44                               Rubin & Rothman, LLC      2
+45                           Neuheisel Law Firm, P.C.      2
+46                                   OpenRoad Lending      2
+47                                     Logan View LLC      2
+48                                       GM Financial      2
+49                                 City National Bank      2
+50                         Couch Conville & Blitt LLC      2
+51                                           Rabobank      2
+52                             Stenger & Stenger, P.C      2
+53                             Selip & Stylianou, LLP      2
+54                              Real Time Resolutions      2
+55                                         LexisNexis      2
+56                      Federated Capital Corporation      2
+#+end_src
+** HAVINGがないバージョン
+#+begin_src sql
+
+SELECT company,
+       COUNT(*)
+FROM credit_card_complaints
+GROUP BY company
+#+end_src
+
+#+begin_src
+                              company  count
+0              Goldman Sachs Bank USA      1
+1     Automatic Data Processing, Inc.      1
+2          Citi Management Group, LLC      1
+3     Lyons, Doughty & Veldhuis, P.C.      1
+4           Weinman Acquisition Group      1
+..                                ...    ...
+416     Federated Capital Corporation      2
+417                          Experian     50
+418                      Conn's, Inc.     14
+419                Razor Capital, LLC      1
+420  Regional Acquisition Group, Inc.      1
+
+[421 rows x 2 columns]
+#+end_src
+** HAVINGで条件指定する
+#+begin_src sql
+
+SELECT company,
+       AVG(CAST(complaint_id AS INT))
+FROM credit_card_complaints
+GROUP BY company
+HAVING AVG(CAST(complaint_id AS INT)) <= 100000;
+#+end_src
+
+#+begin_src
+                company      avg
+0  Kramer & Frank, P.C.  92025.0
+#+end_src
+** HAVINGがないバージョン
+#+begin_src sql
+
+SELECT company,
+       AVG(CAST(complaint_id AS INT))
+FROM credit_card_complaints
+GROUP BY company
+#+end_src
+
+#+begin_src
+                              company           avg
+0              Goldman Sachs Bank USA  2.327895e+06
+1     Automatic Data Processing, Inc.  2.046060e+06
+2          Citi Management Group, LLC  1.868638e+06
+3     Lyons, Doughty & Veldhuis, P.C.  1.936288e+06
+4           Weinman Acquisition Group  1.882740e+06
+..                                ...           ...
+416     Federated Capital Corporation  8.256790e+05
+417                          Experian  1.135318e+06
+418                      Conn's, Inc.  1.881726e+06
+419                Razor Capital, LLC  7.575410e+05
+420  Regional Acquisition Group, Inc.  1.127463e+06
+
+[421 rows x 2 columns]
+#+end_src
+** ORDER BY 複数
+#+begin_src sql
+
+SELECT company,
+       issue
+FROM credit_card_complaints
+ORDER BY company,
+         issue
+#+end_src
+
+#+begin_src
+                                 company                                     issue
+0                  ACE Cash Express Inc.                      Credit determination
+1      ADR ARBITRATION SERVICES (Closed)                               Arbitration
+2                              AES/PHEAA                        Delinquent account
+3            AMRON PROFESSIONAL SERVICES     Identity theft / Fraud / Embezzlement
+4                    APPLE RECOVERY, LLC  Credit card protection / Debt protection
+...                                  ...                                       ...
+87713               Zions Bancorporation                                     Other
+87714               Zions Bancorporation                                     Other
+87715               Zions Bancorporation       Unsolicited issuance of credit card
+87716               Zwicker & Associates                        Delinquent account
+87717               Zwicker & Associates                                     Other
+
+[87718 rows x 2 columns]
+#+end_src
+** ソートキーに別名が使用できる
+#+begin_src sql
+
+SELECT company AS c
+FROM credit_card_complaints
+ORDER BY c
+#+end_src
+
+#+begin_src
+                                       c
+0                  ACE Cash Express Inc.
+1      ADR ARBITRATION SERVICES (Closed)
+2                              AES/PHEAA
+3            AMRON PROFESSIONAL SERVICES
+4                    APPLE RECOVERY, LLC
+...                                  ...
+87713               Zions Bancorporation
+87714               Zions Bancorporation
+87715               Zions Bancorporation
+87716               Zwicker & Associates
+87717               Zwicker & Associates
+
+[87718 rows x 1 columns]
+#+end_src
 * ビュー
 ** credit_wを作成する(command)
 #+begin_src sql

@@ -48,3 +48,67 @@ SELECT issue, COUNT(issue)
  ORDER BY count DESC
 '''
 utils.run_query(query, 'Citibankの苦情の理由ランキング。条件の位置に注意')
+
+query = '''
+SELECT company AS c
+  FROM credit_card_complaints
+ GROUP BY c
+'''
+utils.run_query(query, 'SELECTが先に実行されるので、別名をGROUP BYで使うことはできない。PostgreSQLでは実行可能。')
+
+query = '''
+SELECT distinct company
+  FROM credit_card_complaints
+'''
+utils.run_query(query, '↓と同じ')
+
+query = '''
+SELECT company
+  FROM credit_card_complaints
+ GROUP BY company
+'''
+utils.run_query(query, '↑と同じ')
+
+query = '''
+SELECT company, COUNT(*)
+  FROM credit_card_complaints
+ GROUP BY company
+HAVING COUNT(*) = 2;
+'''
+utils.run_query(query, '集約したグループから含まれる行数が2行のものを選択する。集約に対して条件を指定するのがHAVING')
+
+query = '''
+SELECT company, COUNT(*)
+  FROM credit_card_complaints
+ GROUP BY company
+'''
+utils.run_query(query, 'HAVINGがないバージョン')
+
+query = '''
+SELECT company, AVG(CAST(complaint_id AS INT))
+  FROM credit_card_complaints
+ GROUP BY company
+ HAVING AVG(CAST(complaint_id AS INT)) <= 100000;
+'''
+utils.run_query(query, 'HAVINGで条件指定する')
+
+query = '''
+SELECT company, AVG(CAST(complaint_id AS INT))
+  FROM credit_card_complaints
+ GROUP BY company
+'''
+utils.run_query(query, 'HAVINGがないバージョン')
+
+query = '''
+SELECT company, issue
+  FROM credit_card_complaints
+ ORDER BY company, issue
+'''
+utils.run_query(query, 'ORDER BY 複数')
+
+query = '''
+SELECT company AS c
+  FROM credit_card_complaints
+ ORDER BY c
+'''
+utils.run_query(query, 'ソートキーに別名が使用できる')
