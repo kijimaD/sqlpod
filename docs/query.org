@@ -655,6 +655,60 @@ LIMIT 100
 
 [100 rows x 2 columns]
 #+end_src
+** カッコをつけて正しい結果になった
+#+begin_src sql
+
+SELECT company,
+       issue
+FROM credit_card_complaints
+WHERE company = 'Citibank'
+  AND (issue = 'Late fee'
+       OR issue = 'Payoff process')
+LIMIT 100
+#+end_src
+
+#+begin_src
+     company           issue
+0   Citibank  Payoff process
+1   Citibank  Payoff process
+2   Citibank  Payoff process
+3   Citibank        Late fee
+4   Citibank        Late fee
+..       ...             ...
+95  Citibank        Late fee
+96  Citibank  Payoff process
+97  Citibank  Payoff process
+98  Citibank  Payoff process
+99  Citibank        Late fee
+
+[100 rows x 2 columns]
+#+end_src
+** 計算した値を条件に使う
+#+begin_src sql
+
+SELECT complaint_id,
+       (CAST(complaint_id AS float) * 2) AS complaint_id_x2
+FROM credit_card_complaints
+WHERE (CAST(complaint_id AS float) * 2) > 1000000
+LIMIT 100;
+#+end_src
+
+#+begin_src
+   complaint_id  complaint_id_x2
+0        501134        1002268.0
+1        500697        1001394.0
+2        500094        1000188.0
+3        502104        1004208.0
+4        500232        1000464.0
+..          ...              ...
+95       524630        1049260.0
+96       525816        1051632.0
+97       531767        1063534.0
+98       532780        1065560.0
+99       518623        1037246.0
+
+[100 rows x 2 columns]
+#+end_src
 * キャスト
 ** floatに型キャストする
 #+begin_src sql
@@ -769,6 +823,157 @@ WHERE consumer_complaint_narrative IS NULL;
 #+begin_src
    count
 0  70285
+#+end_src
+* 集計関数
+** COUNTで数を数える/nullのtagsカラムを除外してカウントする
+#+begin_src sql
+
+SELECT count(*),
+       count(tags)
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+   count  count
+0  87718  13258
+#+end_src
+** 苦情IDを合算する
+#+begin_src sql
+
+SELECT SUM(cast(complaint_id AS int))
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+            sum
+0  101000252916
+#+end_src
+** 苦情IDの平均
+#+begin_src sql
+
+SELECT AVG(cast(complaint_id AS int))
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+            avg
+0  1.151420e+06
+#+end_src
+** 最小・最大の苦情ID
+#+begin_src sql
+
+SELECT MAX(cast(complaint_id AS int)),
+       MIN(cast(complaint_id AS int))
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+       max  min
+0  2428845    1
+#+end_src
+** 重複なしの会社の数。COUNTとDISTINCTを使う
+#+begin_src sql
+
+SELECT COUNT(DISTINCT company)
+FROM credit_card_complaints
+#+end_src
+
+#+begin_src
+   count
+0    421
+#+end_src
+** 苦情の理由ランキング
+#+begin_src sql
+
+SELECT issue,
+       COUNT(issue)
+FROM credit_card_complaints
+GROUP BY issue
+ORDER BY COUNT DESC
+#+end_src
+
+#+begin_src
+                                       issue  count
+0                           Billing disputes  14827
+1                                      Other   9144
+2      Identity theft / Fraud / Embezzlement   8330
+3                 Closing/Cancelling account   6291
+4                       APR or interest rate   5463
+5                                   Late fee   3576
+6      Customer service / Customer relations   3458
+7                         Delinquent account   3155
+8                       Credit determination   3013
+9                  Advertising and marketing   2894
+10                                   Rewards   2866
+11  Credit card protection / Debt protection   2689
+12                         Transaction issue   2654
+13                         Billing statement   2590
+14                            Payoff process   2277
+15             Credit line increase/decrease   2146
+16                                 Other fee   2141
+17       Unsolicited issuance of credit card   1815
+18                          Credit reporting   1696
+19                          Balance transfer   1104
+20                      Collection practices   1001
+21                   Collection debt dispute    901
+22               Forbearance / Workout plans    547
+23              Application processing delay    522
+24                                   Privacy    485
+25                                Bankruptcy    441
+26                               Arbitration    341
+27                           Sale of account    337
+28                              Cash advance    243
+29                      Balance transfer fee    219
+30                             Overlimit fee    213
+31                          Cash advance fee    194
+32                        Convenience checks    145
+#+end_src
+** Citibankの苦情の理由ランキング。条件の位置に注意
+#+begin_src sql
+
+SELECT issue,
+       COUNT(issue)
+FROM credit_card_complaints
+WHERE company = 'Citibank'
+GROUP BY issue
+ORDER BY COUNT DESC
+#+end_src
+
+#+begin_src
+                                       issue  count
+0                           Billing disputes   3153
+1                                      Other   1541
+2      Identity theft / Fraud / Embezzlement   1327
+3                 Closing/Cancelling account   1069
+4                       APR or interest rate   1009
+5                                   Late fee    895
+6      Customer service / Customer relations    732
+7                          Billing statement    701
+8                       Credit determination    611
+9   Credit card protection / Debt protection    584
+10                        Delinquent account    583
+11                 Advertising and marketing    488
+12                                 Other fee    476
+13                            Payoff process    466
+14                                   Rewards    455
+15                         Transaction issue    421
+16             Credit line increase/decrease    401
+17                          Credit reporting    304
+18       Unsolicited issuance of credit card    266
+19                      Collection practices    201
+20                   Collection debt dispute    168
+21                          Balance transfer    159
+22               Forbearance / Workout plans    119
+23                                   Privacy     80
+24              Application processing delay     80
+25                           Sale of account     56
+26                               Arbitration     55
+27                                Bankruptcy     51
+28                          Cash advance fee     28
+29                      Balance transfer fee     26
+30                             Overlimit fee     21
+31                              Cash advance     19
+32                        Convenience checks     16
 #+end_src
 * ビュー
 ** credit_wを作成する(command)

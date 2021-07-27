@@ -126,3 +126,12 @@ SELECT company, issue
  LIMIT 100
 '''
 utils.run_query(query, 'カッコをつけて正しい結果になった')
+
+query = '''
+SELECT complaint_id,
+       (CAST(complaint_id AS float) * 2) AS complaint_id_x2
+FROM credit_card_complaints
+where (CAST(complaint_id AS float) * 2) > 1000000
+LIMIT 100;
+'''
+utils.run_query(query, '計算した値を条件に使う')
