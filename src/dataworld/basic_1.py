@@ -112,3 +112,11 @@ SELECT company AS c
  ORDER BY c
 '''
 utils.run_query(query, 'ソートキーに別名が使用できる')
+
+query = '''
+SELECT complaint_id, company
+  FROM credit_card_complaints
+ WHERE (CAST(complaint_id AS INT)) <= (SELECT AVG(CAST(complaint_id AS INT))
+                                       FROM credit_card_complaints)
+'''
+utils.run_query(query, '条件にスカラ・サブクエリを使う')
