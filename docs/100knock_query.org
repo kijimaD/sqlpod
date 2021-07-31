@@ -1,4 +1,4 @@
-* データだけ流用して、中身は基本クエリ
+* データだけ流用して、中身は基本的なクエリの練習
 ** 内容確認する
 #+begin_src sql
 
@@ -365,6 +365,431 @@ ORDER BY amount
 663   S12013     348
 
 [664 rows x 2 columns]
+#+end_src
+* 基本的なクエリの練習
+** 一覧
+#+begin_src sql
+
+SELECT *
+FROM receipt
+LIMIT 10
+#+end_src
+
+#+begin_src
+   sales_ymd  sales_epoch store_cd  receipt_no  ...     customer_id  product_cd quantity  amount
+0   20181103   1541203200   S14006         112  ...  CS006214000001  P070305012        1     158
+1   20181118   1542499200   S13008        1132  ...  CS008415000097  P070701017        1      81
+2   20170712   1499817600   S14028        1102  ...  CS028414000014  P060101005        1     170
+3   20190205   1549324800   S14042        1132  ...  ZZ000000000000  P050301001        1      25
+4   20180821   1534809600   S14025        1102  ...  CS025415000050  P060102007        1      90
+5   20190605   1559692800   S13003        1112  ...  CS003515000195  P050102002        1     138
+6   20181205   1543968000   S14024        1102  ...  CS024514000042  P080101005        1      30
+7   20190922   1569110400   S14040        1102  ...  CS040415000178  P070501004        1     128
+8   20170504   1493856000   S13020        1112  ...  ZZ000000000000  P071302010        1     770
+9   20191010   1570665600   S14027        1102  ...  CS027514000015  P071101003        1     680
+
+[10 rows x 9 columns]
+#+end_src
+** 一覧
+#+begin_src sql
+
+SELECT *
+FROM customer
+LIMIT 10
+#+end_src
+
+#+begin_src
+      customer_id customer_name gender_cd  ... application_store_cd application_date     status_cd
+0  CS021313000114        大野 あや子         1  ...               S14021         20150905  0-00000000-0
+1  CS037613000071         六角 雅彦         9  ...               S13037         20150414  0-00000000-0
+2  CS031415000172       宇多田 貴美子         1  ...               S13031         20150529  D-20100325-C
+3  CS028811000001        堀井 かおり         1  ...               S14028         20160115  0-00000000-0
+4  CS001215000145         田崎 美紀         1  ...               S13001         20170605  6-20090929-2
+5  CS020401000016         宮下 達士         0  ...               S13020         20150225  0-00000000-0
+6  CS015414000103         奥野 陽子         1  ...               S13015         20150722  B-20100609-B
+7  CS029403000008          釈 人志         0  ...               S12029         20150515  0-00000000-0
+8  CS015804000004         松谷 米蔵         0  ...               S13015         20150607  0-00000000-0
+9  CS033513000180          安斎 遥         1  ...               S14033         20150728  6-20080506-5
+
+[10 rows x 11 columns]
+#+end_src
+** INNER JOINでくっつける
+#+begin_src sql
+
+SELECT r.customer_id,
+       r.amount,
+       c.customer_name
+FROM receipt AS r
+INNER JOIN customer AS c ON r.customer_id = c.customer_id
+#+end_src
+
+#+begin_src
+          customer_id  amount customer_name
+0      CS006214000001     158         志水 佳乃
+1      CS008415000097      81          中田 光
+2      CS028414000014     170        米倉 ヒカル
+3      CS025415000050      90         亀井 奈々
+4      CS003515000195     138        梅村 真奈美
+...               ...     ...           ...
+65677  CS010414000008     150        深沢 千佳子
+65678  CS004515000066     308         寺島 奈月
+65679  CS046415000017      98         筒井 美嘉
+65680  CS040513000195     168          寺田 薫
+65681  CS002513000049     148         梶原 まみ
+
+[65682 rows x 3 columns]
+#+end_src
+** INNER JOIN結果を条件指定する
+#+begin_src sql
+
+SELECT r.customer_id,
+       r.amount,
+       c.customer_name
+FROM receipt AS r
+INNER JOIN customer AS c ON r.customer_id = c.customer_id
+WHERE r.amount = 500
+ORDER BY r.amount
+#+end_src
+
+#+begin_src
+       customer_id  amount customer_name
+0   CS040513000031     500         杉原 沙耶
+1   CS026414000097     500        本間 沙知絵
+2   CS035215000015     500         尾崎 由宇
+3   CS040415000252     500         八十田 希
+4   CS014415000045     500        安井 さやか
+5   CS040415000220     500        藤村 菜々美
+6   CS039415000220     500        伊集院 光博
+7   CS038214000019     500         菊地 奈月
+8   CS031515000131     500         橋口 奈月
+9   CS023512000131     500          荻原 窈
+10  CS035415000037     500          奥野 茜
+11  CS029513000165     500         宮内 那奈
+12  CS018415000141     500        宇野 真悠子
+13  CS007615000058     500         今西 陽子
+14  CS001415000580     500        山元 真悠子
+15  CS002414000284     500        田村 未華子
+16  CS026615000114     500        豊島 貴美子
+17  CS033414000064     500         山崎 そら
+18  CS033415000086     500         芦田 りえ
+19  CS041515000003     500          長沢 光
+20  CS019314000054     500          水口 遥
+21  CS032414000024     500        堀井 沙知絵
+22  CS005615000094     500        伊東 さやか
+23  CS028215000024     500         森山 まみ
+24  CS040815000003     500         高島 倫子
+25  CS017414000066     500         上杉 そら
+26  CS030415000024     500          森下 杏
+27  CS034515000173     500         五十嵐 瞬
+28  CS035515000154     500        伊東 さやか
+29  CS026515000058     500        小柳 千佳子
+30  CS020315000106     500          寺田 花
+#+end_src
+** LEFT OUTER JOIN、でくっつける。片方のテーブルにしかないもの出力しNullが入る。元のテーブルにない外部から情報を持ってくるので外部結合。
+#+begin_src sql
+
+SELECT r.customer_id,
+       r.amount,
+       c.customer_name
+FROM receipt AS r
+LEFT OUTER JOIN customer AS c ON r.customer_id = c.customer_id
+ORDER BY r.amount
+LIMIT 100
+#+end_src
+
+#+begin_src
+       customer_id  amount customer_name
+0   ZZ000000000000      10          None
+1   CS004415000315      10        石井 恵梨香
+2   CS003412000047      10         野際 勝久
+3   ZZ000000000000      10          None
+4   CS015513000002      10          皆川 花
+..             ...     ...           ...
+95  CS019515000038      10         金井 奈々
+96  CS001415000324      10         川野 夏希
+97  ZZ000000000000      10          None
+98  CS034413000191      10        野口 隆之介
+99  ZZ000000000000      10          None
+
+[100 rows x 3 columns]
+#+end_src
+** ↑のRIGHT OUTER JOINバージョン。customerをマスタにするのでcustomer_nameがNullにならない。
+#+begin_src sql
+
+SELECT r.customer_id,
+       r.amount,
+       c.customer_name
+FROM receipt AS r
+RIGHT OUTER JOIN customer AS c ON r.customer_id = c.customer_id
+ORDER BY r.amount
+LIMIT 100
+#+end_src
+
+#+begin_src
+       customer_id  amount customer_name
+0   CS002415000051      10         藤木 そら
+1   CS018515000114      10         江藤 コウ
+2   CS011515000207      10        前田 璃奈子
+3   CS031314000081      10          溝口 咲
+4   CS011513000148      10         波多野 愛
+..             ...     ...           ...
+95  CS027414000084      10         浅野 里穂
+96  CS003515000017      10          富田 涼
+97  CS028214000013      10         塩田 愛梨
+98  CS018414000065      10        浅川 まなみ
+99  CS028414000040      10          富田 咲
+
+[100 rows x 3 columns]
+#+end_src
+** 複数JOIN(OUTER)
+#+begin_src sql
+
+SELECT c.customer_name,
+       r.amount,
+       p.product_cd
+FROM customer AS c
+LEFT OUTER JOIN receipt AS r ON c.customer_id = r.customer_id
+LEFT OUTER JOIN product AS p ON r.product_cd = p.product_cd
+#+end_src
+
+#+begin_src
+      customer_name  amount  product_cd
+0             志水 佳乃   158.0  P070305012
+1              中田 光    81.0  P070701017
+2            米倉 ヒカル   170.0  P060101005
+3             亀井 奈々    90.0  P060102007
+4            梅村 真奈美   138.0  P050102002
+...             ...     ...         ...
+79342          大森 優     NaN        None
+79343         柴田 明日     NaN        None
+79344         大村 玲那     NaN        None
+79345         水谷 明慶     NaN        None
+79346         石丸 陽子     NaN        None
+
+[79347 rows x 3 columns]
+#+end_src
+** 複数JOIN(INNER)
+#+begin_src sql
+
+SELECT c.customer_name,
+       r.amount,
+       p.product_cd
+FROM customer AS c
+INNER JOIN receipt AS r ON c.customer_id = r.customer_id
+INNER JOIN product AS p ON r.product_cd = p.product_cd
+#+end_src
+
+#+begin_src
+      customer_name  amount  product_cd
+0             志水 佳乃     158  P070305012
+1              中田 光      81  P070701017
+2            米倉 ヒカル     170  P060101005
+3             亀井 奈々      90  P060102007
+4            梅村 真奈美     138  P050102002
+...             ...     ...         ...
+65677        深沢 千佳子     150  P060103003
+65678         寺島 奈月     308  P059001016
+65679         筒井 美嘉      98  P070703003
+65680          寺田 薫     168  P050405003
+65681         梶原 まみ     148  P060303001
+
+[65682 rows x 3 columns]
+#+end_src
+** sales_ymdごとのamountのランキングを出す
+#+begin_src sql
+
+SELECT sales_ymd,
+       amount,
+       receipt_no,
+       rank () OVER (PARTITION BY sales_ymd
+                     ORDER BY amount) AS ranking
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    sales_ymd  amount  receipt_no  ranking
+0    20170101      40        1132        1
+1    20170101      40        1142        1
+2    20170101      45        1182        3
+3    20170101      60        1192        4
+4    20170101      70        1162        5
+..        ...     ...         ...      ...
+95   20170102      81        1122        7
+96   20170102      88        1172        8
+97   20170102      88        1192        8
+98   20170102      95        1152       10
+99   20170102      95        1122       10
+
+[100 rows x 4 columns]
+#+end_src
+** ↑PARTITION BY を使わないバージョン。receiptテーブル全体でのランキングになった
+#+begin_src sql
+
+SELECT product_cd,
+       amount,
+       rank () OVER (
+                     ORDER BY amount) AS ranking
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    product_cd  amount  ranking
+0   P080102007      10        1
+1   P080102001      10        1
+2   P080102006      10        1
+3   P080102009      10        1
+4   P080102003      10        1
+..         ...     ...      ...
+95  P080102001      10        1
+96  P080102002      10        1
+97  P080102002      10        1
+98  P080102003      10        1
+99  P080102010      10        1
+
+[100 rows x 3 columns]
+#+end_src
+** ウィンドウ専用関数でさまざまなランキング
+#+begin_src sql
+
+SELECT product_cd,
+       amount,
+       rank () OVER (
+                     ORDER BY amount) AS ranking,
+                    dense_rank () OVER (
+                                        ORDER BY amount) AS dense_ranking,
+                                       row_number () OVER (
+                                                           ORDER BY amount) AS row_num
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    product_cd  amount  ranking  dense_ranking  row_num
+0   P080102007      10        1              1        1
+1   P080102001      10        1              1        2
+2   P080102006      10        1              1        3
+3   P080102009      10        1              1        4
+4   P080102003      10        1              1        5
+..         ...     ...      ...            ...      ...
+95  P080102001      10        1              1       96
+96  P080102002      10        1              1       97
+97  P080102002      10        1              1       98
+98  P080102003      10        1              1       99
+99  P080102010      10        1              1      100
+
+[100 rows x 5 columns]
+#+end_src
+** ウィンドウ関数でAVG関数を使う
+#+begin_src sql
+
+SELECT sales_ymd,
+       amount,
+       SUM (amount) OVER (
+                          ORDER BY sales_ymd) AS current_sum
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    sales_ymd  amount  current_sum
+0    20170101     180        33723
+1    20170101     198        33723
+2    20170101     138        33723
+3    20170101     110        33723
+4    20170101     338        33723
+..        ...     ...          ...
+95   20170102     270        57888
+96   20170102     596        57888
+97   20170102     215        57888
+98   20170102     458        57888
+99   20170102     440        57888
+
+[100 rows x 3 columns]
+#+end_src
+** ウィンドウ関数でSUM関数を使う
+#+begin_src sql
+
+SELECT sales_ymd,
+       amount,
+       AVG (amount) OVER (
+                          ORDER BY sales_ymd) AS current_avg
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    sales_ymd  amount  current_avg
+0    20170101     180   378.910112
+1    20170101     198   378.910112
+2    20170101     138   378.910112
+3    20170101     110   378.910112
+4    20170101     338   378.910112
+..        ...     ...          ...
+95   20170102     270   330.788571
+96   20170102     596   330.788571
+97   20170102     215   330.788571
+98   20170102     458   330.788571
+99   20170102     440   330.788571
+
+[100 rows x 3 columns]
+#+end_src
+** 直近2つのレコードで移動平均
+#+begin_src sql
+
+SELECT sales_ymd,
+       amount,
+       AVG (amount) OVER (
+                          ORDER BY sales_ymd ROWS 2 preceding) AS moving_avg_amount
+FROM receipt
+LIMIT 100
+#+end_src
+
+#+begin_src
+    sales_ymd  amount  moving_avg_amount
+0    20170101     180         180.000000
+1    20170101     198         189.000000
+2    20170101     138         172.000000
+3    20170101     110         148.666667
+4    20170101     338         195.333333
+..        ...     ...                ...
+95   20170102     270         482.666667
+96   20170102     596         655.333333
+97   20170102     215         360.333333
+98   20170102     458         423.000000
+99   20170102     440         371.000000
+
+[100 rows x 3 columns]
+#+end_src
+** グループ化された各日付ごとの順位で並び替える
+#+begin_src sql
+
+SELECT sales_ymd,
+       amount,
+       receipt_no,
+       rank () OVER (PARTITION BY sales_ymd
+                     ORDER BY amount) AS ranking
+FROM receipt
+ORDER BY ranking
+LIMIT 100
+#+end_src
+
+#+begin_src
+    sales_ymd  amount  receipt_no  ranking
+0    20170310      40        1132        1
+1    20170323      30        1142        1
+2    20170227      40        1172        1
+3    20170309      68        1102        1
+4    20170318      30        1142        1
+..        ...     ...         ...      ...
+95   20170209      51        1112        1
+96   20170112      10         112        1
+97   20170214      25        1142        1
+98   20170128      30        1162        1
+99   20170324      80        1112        1
+
+[100 rows x 4 columns]
 #+end_src
 * データ加工100本ノック
 ** S-001: レシート明細テーブル（receipt）から全項目を10件抽出し、どのようなデータを保有しているか目視で確認せよ。
