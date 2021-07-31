@@ -1,0 +1,392 @@
+* データだけ流用して、中身は基本クエリ
+** 内容確認する
+#+begin_src sql
+
+SELECT *
+FROM receipt
+LIMIT 10
+#+end_src
+
+#+begin_src
+   sales_ymd  sales_epoch store_cd  receipt_no  ...     customer_id  product_cd quantity  amount
+0   20181103   1541203200   S14006         112  ...  CS006214000001  P070305012        1     158
+1   20181118   1542499200   S13008        1132  ...  CS008415000097  P070701017        1      81
+2   20170712   1499817600   S14028        1102  ...  CS028414000014  P060101005        1     170
+3   20190205   1549324800   S14042        1132  ...  ZZ000000000000  P050301001        1      25
+4   20180821   1534809600   S14025        1102  ...  CS025415000050  P060102007        1      90
+5   20190605   1559692800   S13003        1112  ...  CS003515000195  P050102002        1     138
+6   20181205   1543968000   S14024        1102  ...  CS024514000042  P080101005        1      30
+7   20190922   1569110400   S14040        1102  ...  CS040415000178  P070501004        1     128
+8   20170504   1493856000   S13020        1112  ...  ZZ000000000000  P071302010        1     770
+9   20191010   1570665600   S14027        1102  ...  CS027514000015  P071101003        1     680
+
+[10 rows x 9 columns]
+#+end_src
+** 相関サブクエリ。強引に置き換えたため集計内容に意味はない
+#+begin_src sql
+
+SELECT store_cd,
+       amount
+FROM receipt AS s1
+WHERE amount >
+    (SELECT AVG(amount)
+     FROM receipt AS s2
+     WHERE s1.store_cd = s2.store_cd
+     GROUP BY store_cd)
+LIMIT 10
+#+end_src
+
+#+begin_src
+  store_cd  amount
+0   S13020     770
+1   S14027     680
+2   S13039     428
+3   S13016     780
+4   S13020    1100
+5   S13019     990
+6   S14011     495
+7   S13018    2200
+8   S14045     540
+9   S13004    1880
+#+end_src
+** 相関サブクエリの中身を見てみる
+#+begin_src sql
+
+SELECT store_cd,
+       AVG(amount)
+FROM receipt
+GROUP BY store_cd
+LIMIT 10
+#+end_src
+
+#+begin_src
+  store_cd         avg
+0   S12007  307.688343
+1   S13017  317.581070
+2   S13043  318.125000
+3   S13052  402.867470
+4   S13016  329.639950
+5   S14027  314.918466
+6   S13009  328.141988
+7   S14022  321.643457
+8   S13019  330.208616
+9   S13039  310.918699
+#+end_src
+** IN述語で複数条件
+#+begin_src sql
+
+SELECT DISTINCT product_cd,
+                amount
+FROM receipt
+WHERE amount in (158,
+                 81,
+                 30)
+LIMIT 10
+#+end_src
+
+#+begin_src
+   product_cd  amount
+0  P070701007      81
+1  P060701006     158
+2  P080101001      30
+3  P070701010      81
+4  P070203016     158
+5  P070307023     158
+6  P070401012     158
+7  P070305013     158
+8  P090806008     158
+9  P050405002     158
+#+end_src
+** NOT IN
+#+begin_src sql
+
+SELECT amount,
+       quantity
+FROM receipt
+WHERE quantity not in (1,
+                       3)
+LIMIT 10
+#+end_src
+
+#+begin_src
+   amount  quantity
+0      80         2
+1     596         2
+2     140         2
+3    2200         2
+4      60         2
+5     336         2
+6     296         2
+7     296         2
+8     556         2
+9     296         2
+#+end_src
+** サブクエリで条件検索する
+#+begin_src sql
+
+SELECT store_cd,
+       amount,
+       product_cd,
+       customer_id
+FROM receipt
+WHERE customer_id in
+    (SELECT customer_id
+     FROM receipt
+     WHERE product_cd = 'P070305012')
+LIMIT 10
+#+end_src
+
+#+begin_src
+  store_cd  amount  product_cd     customer_id
+0   S14006     158  P070305012  CS006214000001
+1   S14042      25  P050301001  ZZ000000000000
+2   S13020     770  P071302010  ZZ000000000000
+3   S12014     115  P050104001  ZZ000000000000
+4   S13002     100  P080803001  ZZ000000000000
+5   S13044     268  P040102001  ZZ000000000000
+6   S13020    1100  P071401002  ZZ000000000000
+7   S13044     190  P071102002  ZZ000000000000
+8   S13041     218  P071001084  ZZ000000000000
+9   S14045     208  P080602001  ZZ000000000000
+#+end_src
+** ↑サブクエリの中身
+#+begin_src sql
+
+SELECT customer_id,
+       product_cd
+FROM receipt
+WHERE product_cd = 'P070305012'
+LIMIT 10
+#+end_src
+
+#+begin_src
+      customer_id  product_cd
+0  CS006214000001  P070305012
+1  ZZ000000000000  P070305012
+2  CS013515000134  P070305012
+3  ZZ000000000000  P070305012
+4  ZZ000000000000  P070305012
+5  ZZ000000000000  P070305012
+6  ZZ000000000000  P070305012
+#+end_src
+** EXISTS関数。あまりうまい例が思いつかなかった
+#+begin_src sql
+
+SELECT store_cd,
+       receipt_no,
+       amount
+FROM receipt AS r0
+WHERE EXISTS
+    (SELECT *
+     FROM receipt AS r1
+     WHERE r1.amount = 158
+       AND r0.sales_ymd = r1.sales_ymd)
+LIMIT 10
+#+end_src
+
+#+begin_src
+  store_cd  receipt_no  amount
+0   S12007         112     190
+1   S12007        1102     125
+2   S12007        1102     158
+3   S12029         112     180
+4   S12029        1152      78
+5   S12029        1152    1100
+6   S12029        1182     270
+7   S13001        1162     596
+8   S13002        1122     215
+9   S13002        1132     458
+#+end_src
+** WHENで文字を挿入する
+#+begin_src sql
+
+SELECT receipt_no,
+       CASE
+           WHEN store_cd = 'S14006' THEN '大阪:' || store_cd
+           WHEN store_cd = 'S13008' THEN '鳥取' || store_cd
+           WHEN store_cd = 'S14028' THEN '名古屋' || store_cd
+           ELSE NULL
+       END AS store
+FROM receipt
+LIMIT 10
+#+end_src
+
+#+begin_src
+   receipt_no      store
+0         112  大阪:S14006
+1        1132   鳥取S13008
+2        1102  名古屋S14028
+3        1132       None
+4        1102       None
+5        1112       None
+6        1102       None
+7        1102       None
+8        1112       None
+9        1102       None
+#+end_src
+** 集計した内容を行列変換する
+#+begin_src sql
+
+SELECT sum(CASE
+               WHEN store_cd = 'S14006' THEN receipt_no
+               ELSE 0
+           END) AS sum_14,
+       sum(CASE
+               WHEN store_cd = 'S13008' THEN receipt_no
+               ELSE 0
+           END) AS sum_15,
+       sum(CASE
+               WHEN store_cd = 'S14028' THEN receipt_no
+               ELSE 0
+           END) AS sum_16
+FROM receipt
+#+end_src
+
+#+begin_src
+    sum_14   sum_15   sum_16
+0  2357971  2608577  2554669
+#+end_src
+** UNIONでくっつける
+#+begin_src sql
+
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 300
+UNION
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 350
+ORDER BY amount
+#+end_src
+
+#+begin_src
+     store_cd  amount
+0      S13019      10
+1      S14046      10
+2      S14033      10
+3      S12013      10
+4      S13018      10
+...       ...     ...
+5851   S14012     348
+5852   S14046     348
+5853   S13039     348
+5854   S13004     348
+5855   S12014     348
+
+[5856 rows x 2 columns]
+#+end_src
+** INTERSECTで共通部分
+#+begin_src sql
+
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 300 INTERSECT
+  SELECT store_cd,
+         amount
+  FROM receipt WHERE amount < 350
+ORDER BY amount
+#+end_src
+
+#+begin_src
+     store_cd  amount
+0      S12014      10
+1      S13015      10
+2      S13051      10
+3      S13020      10
+4      S14042      10
+...       ...     ...
+5187   S14040     298
+5188   S14023     298
+5189   S13001     298
+5190   S14049     298
+5191   S14046     298
+
+[5192 rows x 2 columns]
+#+end_src
+** ALLで重複を削除しない
+#+begin_src sql
+
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 300 INTERSECT ALL
+  SELECT store_cd,
+         amount
+  FROM receipt WHERE amount < 350
+ORDER BY amount
+#+end_src
+
+#+begin_src
+      store_cd  amount
+0       S12014      10
+1       S12014      10
+2       S13020      10
+3       S13020      10
+4       S13035      10
+...        ...     ...
+82447   S13043     298
+82448   S13043     298
+82449   S13043     298
+82450   S13043     298
+82451   S13043     298
+
+[82452 rows x 2 columns]
+#+end_src
+** EXCEPTで引き算。350以下から300以下を引く。なので300以下は含まれていない
+#+begin_src sql
+
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 350
+EXCEPT
+SELECT store_cd,
+       amount
+FROM receipt
+WHERE amount < 300
+ORDER BY amount
+#+end_src
+
+#+begin_src
+    store_cd  amount
+0     S14023     300
+1     S13032     300
+2     S13009     300
+3     S14049     300
+4     S14027     300
+..       ...     ...
+659   S13016     348
+660   S14045     348
+661   S12014     348
+662   S12029     348
+663   S12013     348
+
+[664 rows x 2 columns]
+#+end_src
+* データ加工100本ノック
+** S-001: レシート明細テーブル（receipt）から全項目を10件抽出し、どのようなデータを保有しているか目視で確認せよ。
+#+begin_src sql
+
+SELECT *
+FROM receipt
+LIMIT 10
+#+end_src
+
+#+begin_src
+   sales_ymd  sales_epoch store_cd  receipt_no  ...     customer_id  product_cd quantity  amount
+0   20181103   1541203200   S14006         112  ...  CS006214000001  P070305012        1     158
+1   20181118   1542499200   S13008        1132  ...  CS008415000097  P070701017        1      81
+2   20170712   1499817600   S14028        1102  ...  CS028414000014  P060101005        1     170
+3   20190205   1549324800   S14042        1132  ...  ZZ000000000000  P050301001        1      25
+4   20180821   1534809600   S14025        1102  ...  CS025415000050  P060102007        1      90
+5   20190605   1559692800   S13003        1112  ...  CS003515000195  P050102002        1     138
+6   20181205   1543968000   S14024        1102  ...  CS024514000042  P080101005        1      30
+7   20190922   1569110400   S14040        1102  ...  CS040415000178  P070501004        1     128
+8   20170504   1493856000   S13020        1112  ...  ZZ000000000000  P071302010        1     770
+9   20191010   1570665600   S14027        1102  ...  CS027514000015  P071101003        1     680
+
+[10 rows x 9 columns]
+#+end_src

@@ -1,8 +1,10 @@
 import utils_k
 
-print('* ' + '0')
+print('* ' + 'データ加工100本ノック')
 
 query = '''
-select * from receipt
+select *
+from receipt
+limit 10
 '''
-utils_k.run_query(query, '')
+utils_k.run_query(query, 'S-001: レシート明細テーブル（receipt）から全項目を10件抽出し、どのようなデータを保有しているか目視で確認せよ。')
