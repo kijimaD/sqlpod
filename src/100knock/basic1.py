@@ -130,3 +130,77 @@ order by ranking
 limit 100
 '''
 utils.run_query(query, 'グループ化された各日付ごとの順位で並び替える')
+
+query = '''
+select '合計' as store_cd, sum(amount)
+  from receipt
+union all
+select store_cd, sum(amount)
+from receipt
+group by store_cd
+limit 10
+'''
+utils.run_query(query, 'UNION ALLで合計行をドッキングする。あまりスマートでない')
+
+query = '''
+select product_cd, sum(amount) as sum_amount
+from receipt
+group by rollup(product_cd)
+limit 10
+'''
+utils.run_query(query, 'ROLLUPで↑をスマートに書ける。キー値はNULLなっている')
+
+query = '''
+select product_cd, sales_ymd, sum(amount) as sum_amount
+from receipt
+group by rollup(product_cd, sales_ymd)
+limit 100
+'''
+utils.run_query(query, 'rollupに2つ指定。グループごとに小計を出す')
+
+query = '''
+select product_cd, grouping(product_cd) as product_cd, sum(amount) as sum_amount
+from receipt
+group by rollup(product_cd)
+'''
+utils.run_query(query, '超集合のNULLは1になる')
+
+query = '''
+select case when grouping(product_cd) = 1
+  then '商品コード 合計'
+  else product_cd end as product_cd,
+  case when grouping(product_cd) = 1
+  then 111111
+  else sales_ymd end as sales_ymd,
+  sales_ymd,
+  sum(amount) as sum_amount
+from receipt
+group by rollup(product_cd, sales_ymd)
+order by sum_amount desc
+limit 10
+'''
+utils.run_query(query, '超集合のNULLに指定した値を入れる')
+
+query = '''
+select product_cd, sales_ymd, sum(amount) as sum_amount
+from receipt
+group by cube(product_cd, sales_ymd)
+order by sum_amount desc
+limit 10
+'''
+utils.run_query(query, 'CUBE')
+
+query = '''
+select case when grouping(product_cd) = 1
+  then '商品コード 合計'
+  else product_cd end as product_cd,
+  case when grouping(product_cd) = 1
+  then 111111
+  else sales_ymd end as sales_ymd,
+  sales_ymd,
+  sum(amount) as sum_amount
+from receipt
+group by grouping sets(product_cd, sales_ymd)
+limit 10
+'''
+utils.run_query(query, 'GROUPING SETS')
